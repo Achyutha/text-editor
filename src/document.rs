@@ -1,10 +1,12 @@
-use std::fs;
-
 use crate::{editor::Position, row::Row};
+use std::fs;
+use std::io::Write;
 
 #[derive(Default)]
 pub struct Document {
     pub rows: Vec<Row>,
+    pub file_name: Option<String>,
+    pub dirty: bool,
 }
 
 impl Document {
@@ -14,7 +16,23 @@ impl Document {
         for value in contents.lines() {
             rows.push(Row::from(value));
         }
-        Ok(Self { rows })
+        Ok(Self {
+            rows,
+            file_name: Some(String::from(filename)),
+            dirty: false,
+        })
+    }
+
+    pub fn save(&mut self) -> Result<(), std::io::Error> {
+        if let Some(file_name) = &self.file_name {
+            let mut file = fs::File::create(file_name)?;
+            for row in &self.rows {
+                file.write_all(row.as_bytes())?;
+                file.write_all(b"\n")?;
+            }
+            self.dirty = false;
+        }
+        Ok(())
     }
 
     pub fn row(&self, index: usize) -> Option<&Row> {
@@ -29,7 +47,12 @@ impl Document {
         self.rows.len()
     }
 
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
+
     pub fn insert(&mut self, at: &Position, c: char) {
+        self.dirty = true;
         if c == '\n' {
             self.insert_newline(at);
         } else {
@@ -57,6 +80,7 @@ impl Document {
     }
 
     pub fn delete(&mut self, at: &Position) {
+        self.dirty = true;
         let len = self.len();
         if at.x == self.rows.get_mut(at.y).unwrap().len() && at.y < len - 1 {
             let next_row = self.rows.remove(at.y + 1);

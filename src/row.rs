@@ -45,10 +45,6 @@ impl Row {
         self.len = self.string[..].graphemes(true).count();
     }
 
-    //pub fn is_empty(&self) -> bool {
-    //    self.len() == 0
-    //}
-
     pub fn insert(&mut self, at: usize, c: char) {
         if at >= self.len() {
             self.string.push(c);
@@ -82,5 +78,9 @@ impl Row {
         self.string = beginning;
         self.update_len();
         Self::from(&remainder[..])
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        self.string.as_bytes()
     }
 }
